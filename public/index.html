@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DevFlow AI</title>
+    <style>
+      :root {
+        font-family: Inter, system-ui, -apple-system, sans-serif;
+        color: #0f172a;
+        background: #f8fafc;
+      }
+      body {
+        margin: 0;
+      }
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem 1rem 3rem;
+      }
+      .card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        margin-top: 1rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      }
+      h1,
+      h2 {
+        margin-bottom: 0.5rem;
+      }
+      p,
+      li {
+        line-height: 1.5;
+      }
+      label {
+        font-weight: 600;
+      }
+      input {
+        margin-left: 0.5rem;
+        padding: 0.35rem;
+        border-radius: 6px;
+        border: 1px solid #94a3b8;
+      }
+      button {
+        margin-left: 0.5rem;
+        padding: 0.45rem 0.75rem;
+        border: none;
+        border-radius: 6px;
+        background: #2563eb;
+        color: white;
+        cursor: pointer;
+      }
+      code {
+        background: #e2e8f0;
+        border-radius: 4px;
+        padding: 0.1rem 0.3rem;
+      }
+    </style>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      const { useState } = React;
+
+      function App() {
+        const [skillLevel, setSkillLevel] = useState('beginner');
+        const [recommendations, setRecommendations] = useState([]);
+
+        async function loadRecommendations() {
+          const response = await fetch(`/api/recommendations?skillLevel=${encodeURIComponent(skillLevel)}&goal=${encodeURIComponent('learn and ship faster')}`);
+          const data = await response.json();
+          setRecommendations(data.recommendations || []);
+        }
+
+        return React.createElement(
+          'main',
+          { className: 'container' },
+          React.createElement('h1', null, 'DevFlow AI'),
+          React.createElement(
+            'p',
+            null,
+            'DevFlow AI is an AI-powered developer productivity platform that helps students and developers streamline learning, project building, and collaboration.'
+          ),
+          React.createElement(
+            'section',
+            { className: 'card' },
+            React.createElement('h2', null, 'Who it helps'),
+            React.createElement(
+              'p',
+              null,
+              'Built for students, beginner developers, and open-source contributors who want structured workflows with AI-assisted tooling.'
+            )
+          ),
+          React.createElement(
+            'section',
+            { className: 'card' },
+            React.createElement('h2', null, 'Technical stack'),
+            React.createElement(
+              'ul',
+              null,
+              React.createElement('li', null, 'React frontend for a guided productivity dashboard'),
+              React.createElement('li', null, 'Node.js backend exposing workflow and recommendation APIs'),
+              React.createElement('li', null, 'AI-oriented recommendation and automation endpoints for developer assistance')
+            )
+          ),
+          React.createElement(
+            'section',
+            { className: 'card' },
+            React.createElement('h2', null, 'Try AI recommendations'),
+            React.createElement(
+              'div',
+              null,
+              React.createElement('label', { htmlFor: 'skill-level' }, 'Skill level'),
+              React.createElement('input', {
+                id: 'skill-level',
+                value: skillLevel,
+                onChange: (event) => setSkillLevel(event.target.value),
+                placeholder: 'beginner / intermediate / advanced'
+              }),
+              React.createElement(
+                'button',
+                { onClick: loadRecommendations, type: 'button' },
+                'Get recommendations'
+              )
+            ),
+            React.createElement(
+              'ul',
+              null,
+              recommendations.map((item) => React.createElement('li', { key: item }, item))
+            )
+          ),
+          React.createElement(
+            'section',
+            { className: 'card' },
+            React.createElement('h2', null, 'Collaboration model'),
+            React.createElement(
+              'p',
+              null,
+              'The project follows modular architecture, contributor-friendly docs, and issue-based contributions to support open-source collaboration.'
+            ),
+            React.createElement('p', null, 'Health endpoint: ', React.createElement('code', null, 'GET /api/health'))
+          )
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+    </script>
+  </body>
+</html>
