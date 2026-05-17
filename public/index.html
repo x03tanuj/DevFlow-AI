@@ -68,11 +68,25 @@
       function App() {
         const [skillLevel, setSkillLevel] = useState('beginner');
         const [recommendations, setRecommendations] = useState([]);
+        const [error, setError] = useState('');
 
         async function loadRecommendations() {
-          const response = await fetch(`/api/recommendations?skillLevel=${encodeURIComponent(skillLevel)}&goal=${encodeURIComponent('learn and ship faster')}`);
-          const data = await response.json();
-          setRecommendations(data.recommendations || []);
+          try {
+            setError('');
+            const response = await fetch(`/api/recommendations?skillLevel=${encodeURIComponent(skillLevel)}&goal=${encodeURIComponent('learn and ship faster')}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+              setRecommendations([]);
+              setError(data.error || 'Unable to load recommendations.');
+              return;
+            }
+
+            setRecommendations(data.recommendations || []);
+          } catch {
+            setRecommendations([]);
+            setError('Unable to load recommendations right now.');
+          }
         }
 
         return React.createElement(
@@ -129,8 +143,9 @@
             React.createElement(
               'ul',
               null,
-              recommendations.map((item) => React.createElement('li', { key: item }, item))
-            )
+              recommendations.map((item) => React.createElement('li', { key: item.id }, item.text))
+            ),
+            error ? React.createElement('p', { role: 'alert', 'aria-live': 'assertive' }, error) : null
           ),
           React.createElement(
             'section',

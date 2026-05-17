@@ -5,6 +5,17 @@ const { URL } = require('node:url');
 
 const publicDir = path.join(__dirname, 'public');
 
+function isWithinPublicDirectory(targetPath) {
+  const normalizedBase = path.normalize(publicDir + path.sep);
+  const normalizedTarget = path.normalize(targetPath);
+
+  if (process.platform === 'win32') {
+    return normalizedTarget.toLowerCase().startsWith(normalizedBase.toLowerCase());
+  }
+
+  return normalizedTarget.startsWith(normalizedBase);
+}
+
 function sendJson(res, statusCode, payload) {
   const body = JSON.stringify(payload);
   res.writeHead(statusCode, {
@@ -16,14 +27,26 @@ function sendJson(res, statusCode, payload) {
 }
 
 function sendFile(res, filePath) {
-  fs.readFile(filePath, 'utf8', (error, content) => {
+  const resolvedPath = path.resolve(filePath);
+  if (!isWithinPublicDirectory(resolvedPath)) {
+    sendJson(res, 403, { error: 'Forbidden' });
+    return;
+  }
+
+  fs.readFile(resolvedPath, (error, content) => {
     if (error) {
       sendJson(res, 500, { error: 'Unable to load file.' });
       return;
     }
 
-    const ext = path.extname(filePath);
-    const contentType = ext === '.html' ? 'text/html; charset=utf-8' : 'text/plain; charset=utf-8';
+    const ext = path.extname(resolvedPath);
+    const contentTypes = {
+      '.html': 'text/html; charset=utf-8',
+      '.css': 'text/css; charset=utf-8',
+      '.js': 'application/javascript; charset=utf-8',
+      '.json': 'application/json; charset=utf-8'
+    };
+    const contentType = contentTypes[ext] || 'text/plain; charset=utf-8';
     res.writeHead(200, { 'Content-Type': contentType });
     res.end(content);
   });
@@ -35,16 +58,34 @@ function createRecommendations({ skillLevel, goal }) {
 
   const baseline = {
     beginner: [
-      'Start with guided issue-based tasks and pair each change with a test.',
-      'Use AI explanations to understand pull request feedback before coding.'
+      {
+        id: 'beginner-guided-issues',
+        text: 'Start with guided issue-based tasks and pair each change with a test.'
+      },
+      {
+        id: 'beginner-ai-explanations',
+        text: 'Use AI explanations to understand pull request feedback before coding.'
+      }
     ],
     intermediate: [
-      'Automate repetitive setup tasks with project templates and scripts.',
-      'Use AI to generate implementation outlines before coding.'
+      {
+        id: 'intermediate-setup-automation',
+        text: 'Automate repetitive setup tasks with project templates and scripts.'
+      },
+      {
+        id: 'intermediate-ai-outline',
+        text: 'Use AI to generate implementation outlines before coding.'
+      }
     ],
     advanced: [
-      'Set up workflow automation for CI checks and release readiness.',
-      'Use AI-assisted code review prompts to improve maintainability.'
+      {
+        id: 'advanced-ci-automation',
+        text: 'Set up workflow automation for CI checks and release readiness.'
+      },
+      {
+        id: 'advanced-ai-code-review',
+        text: 'Use AI-assisted code review prompts to improve maintainability.'
+      }
     ]
   };
 
@@ -93,6 +134,15 @@ function requestHandler(req, res) {
   if (req.method === 'GET' && parsedUrl.pathname === '/api/recommendations') {
     const skillLevel = parsedUrl.searchParams.get('skillLevel');
     const goal = parsedUrl.searchParams.get('goal');
+    const supportedSkillLevels = ['beginner', 'intermediate', 'advanced'];
+
+    if (skillLevel && !supportedSkillLevels.includes(skillLevel.toLowerCase())) {
+      sendJson(res, 400, {
+        error: 'Unsupported skillLevel. Use beginner, intermediate, or advanced.'
+      });
+      return;
+    }
+
     sendJson(res, 200, createRecommendations({ skillLevel, goal }));
     return;
   }
